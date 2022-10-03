@@ -26,8 +26,9 @@ app.get('/', (req,res)=>{
 
 app.post('/user', (req,res)=>{
     const newUserRequestObject = req.body;
-    console.log('New User:', JSON, stringify(newUserRequestObject));
-    redisClient.hSet('users', req.body.email, JSON, stringify(newUserRequestObject));
+    console.log('newUserobject',newUserRequestObject);
+    console.log('New User:', JSON.stringify(newUserRequestObject));
+    redisClient.hSet('users', req.body.email, JSON.stringify(newUserRequestObject));
     res.send('New user'+newUserRequestObject.email+'added');
 
 });
@@ -40,7 +41,7 @@ app.post("/login", (req,res)=>{
     console.log("loginPassword", loginPassword);
     //res.send("Who are you?");
 
-    if (loginEmail == "lee21025@byui.edu" && loginPassword == "Leehaein134!"){
+    if (loginEmail == "lee21025@byui.com" && loginPassword == "Leehaein134!"){
         const token = uuidv4();
         res.send(token);
     } else{

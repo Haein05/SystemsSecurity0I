@@ -1,0 +1,1 @@
+curl -v -d "@newuser.json" -X POST -H "Content-type:application/json" http://localhost:3000/user
