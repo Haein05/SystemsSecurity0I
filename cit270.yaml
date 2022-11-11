@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haein05
+  namespace: default
+spec:
+  replicas: 1
+  selector: 
+    matchLabels: 
+      app: haein05
+  template:
+    metadata:
+      name: haein05
+      labels:
+        app: haein05
+    spec:
+      containers:
+      - name: haein05
+        image: scmurdock/cit270
+        volumeMounts:
+        - name: ssl
+          mountPath: "/user/src/app/SSL"
+        command: ["npm"]
+        args: ["run" , "start"]
+        resources:
+          requests:
+            cpu: 0.125
+            memory: 500Mi
+          limits:
+            cpu: 0.125
+            memory: 600Mi
+        imagePullPolicy: IfNotPresent
+      volumes:
+      - name: ssl
+        secret: 
+          secretName: ssl.secret.haein
+
