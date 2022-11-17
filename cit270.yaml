@@ -16,10 +16,10 @@ spec:
     spec:
       containers:
       - name: haein05
-        image: scmurdock/cit270
+        image: haein05/cit270
         volumeMounts:
         - name: ssl
-          mountPath: "/user/src/app/SSL"
+          mountPath: "/usr/src/app/SSL"
         command: ["npm"]
         args: ["run" , "start"]
         resources:
@@ -29,9 +29,20 @@ spec:
           limits:
             cpu: 0.125
             memory: 600Mi
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
       volumes:
       - name: ssl
         secret: 
           secretName: ssl.secret.haein
-
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: haein05-loadbalancer
+spec: 
+  selector: 
+    app: haein05
+  type: LoadBalancer
+  ports: 
+  - port: 443
+    targetPort: 443

@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {v4 : uuidv4} = require('uuid');
-const port = 4043;
+const port = 443;
 const app = express();
 const https = require('https');
 const fs = require('fs');
@@ -18,9 +18,9 @@ const redisClient = createClient(
 app.use(bodyParser.json());
 
 https.createServer({
-    key: fs.readFileSync('/usr/src/app/SSL/server.key'),
-    cert: fs.readFileSync('/usr/src/app/SSL/server.cert'),
-    ca: fs.readFileSync('/usr/src/app/SSL/chain.pem')
+    key: fs.readFileSync('./SSL/server.key'),
+    cert: fs.readFileSync('./SSL/server.cert'),
+    ca: fs.readFileSync('./SSL/chain.pem')
 }, app).listen(port, async() => {
     console.log('Listening...')
     try{
@@ -50,7 +50,7 @@ app.post('/user', async(req,res)=>{
     console.log('newUserobject',newUserRequestObject);
     console.log('New User:', JSON.stringify(newUserRequestObject));
     await redisClient.hSet('users', req.body.email, JSON.stringify(newUserRequestObject));
-    res.send('New user'+newUserRequestObject.email+'added');
+    res.send('New user '+newUserRequestObject.email+' added');
 
 });
 
