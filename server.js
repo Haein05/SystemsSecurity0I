@@ -16,6 +16,7 @@ const redisClient = createClient(
 );
 
 app.use(bodyParser.json());
+app.use(express.static("public"))
 
 https.createServer({
     key: fs.readFileSync('./SSL/server.key'),
