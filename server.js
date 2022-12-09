@@ -11,7 +11,7 @@ const res = require('express/lib/response');
 const { stringify } = require('uuid');
 const redisClient = createClient(
     {
-        url:'redis://default@redis-stedi-haein:6379',
+        url:`redis://default${process.env.REDIS_PASS}@redis-stedi-haein:6379`,
     }
 );
 
