@@ -1,81 +1,70 @@
 const express = require('express');
+const https = require('https');
+const fs = require('fs');
 const bodyParser = require('body-parser');
 const {v4 : uuidv4} = require('uuid');
 const port = 443;
 const app = express();
-const https = require('https');
-const fs = require('fs');
 const {createClient} = require('redis');
-const md5 = require ('md5');
-const res = require('express/lib/response');
-const { stringify } = require('uuid');
+const md5 = require('md5');
+const { json } = require('body-parser');
+const maxNumberoffailedlogins = 3;
+
 const redisClient = createClient(
-    {
-        url:`redis://default${process.env.REDIS_PASS}@redis-stedi-haein:6379`,
-    }
+{
+      url:`redis://default:${process.env.REDIS_PASS}@redis-stedi-haein:6379`,
+}
 );
-
-
 app.use(bodyParser.json());
-app.use(express.static("public"))
-
 https.createServer({
-    key: fs.readFileSync('./SSL/server.key'),
-    cert: fs.readFileSync('./SSL/server.cert'),
-    ca: fs.readFileSync('./SSL/chain.pem')
-}, app).listen(port, async() => {
-    console.log('Listening...')
-    try{
-    await redisClient.connect();
-    console.log('Listening...')}
-    catch(error){
-        console.log(error)
-    }
+    key: fs.readFileSync('/usr/src/app/SSL/server.key'),
+    cert: fs.readFileSync('/usr/src/app/SSL/server.cert'),
+    ca:fs.readFileSync('/usr/src/app/SSL/chain.pem')
+}, app).listen(port, async ()=>{
+    await redisClient.connect();//creating a TCP socket with Redis
+    console.log("Listening on port: "+port);
+})
+app.get('/',(req,res)=>{
+    res.send('Hello!');
 });
-
-//app.listen(port, async ()=>{
-   // await redisClient.connect();
-    //console.log('listening on port '+port);
-//});
-
-app.get('/', (req,res)=>{
-    res.send('Hello World!');
-});
-
-app.post('/user', async(req,res)=>{
+app.post("/user", (req,res)=>{
     const newUserRequestObject = req.body;
     const loginPassword = req.body.password;
-    const hash = md5(loginPassword);
-    console.log(hash);
-    newUserRequestObject.password=hash;
-    newUserRequestObject.verifyPassword=hash;
-    console.log('newUserobject',newUserRequestObject);
-    console.log('New User:', JSON.stringify(newUserRequestObject));
-    await redisClient.hSet('users', req.body.email, JSON.stringify(newUserRequestObject));
-    res.send('New user '+newUserRequestObject.email+' added');
-
+    const hash = md5(loginPassword)
+    console.log(hash)
+    newUserRequestObject.password = hash
+    newUserRequestObject.verifyPassword = hash
+    console.log("New User: ", JSON.stringify(newUserRequestObject));
+    redisClient.hSet("users",req.body.email,JSON.stringify(newUserRequestObject));
+    res.send("New User "+newUserRequestObject.password+" added")
 });
-
-app.post("/login", async(req,res)=>{
+var loginAttempts = {}
+// app.get('/reset')
+app.post('/login', async (req,res)=>{
     const loginEmail = req.body.userName;
     console.log(JSON.stringify(req.body));
-    console.log("loginEmail", loginEmail);
+    console.log('loginEmail',loginEmail);
     const loginPassword = md5(req.body.password);
-    console.log("loginPassword", loginPassword);
-    //res.send("Who are you?");
-
-    const userString=await redisClient.hGet('users', loginEmail);
-    const userObject=JSON.parse(userString)
-    if(userString==''  || userString==null){
+    console.log('loginPasword',loginPassword);
+    const userString=await redisClient.hGet('users',loginEmail);
+    const userObject = JSON.parse(userString);
+    if (loginAttempts[loginEmail] == null) {loginAttempts[loginEmail] = 0}
+    // var userAttempts = userObject.userAttempts;
+    if (loginAttempts[loginEmail] >= maxNumberoffailedlogins){
+        return res.status(469).send("Stop trying it's not working.")
+    }
+    if(userString=='' || userString==null){
         res.status(404);
         res.send('User not found');
     }
-    else if ( loginPassword == userObject.password){
+    else if (loginEmail==userObject.userName && loginPassword==userObject.password){
         const token = uuidv4();
         res.send(token);
     } else{
-        res.status(401);//unothorized
-        res.send("Invalid user or password");
+        // userObject.userAttempts += 1
+        loginAttempts[loginEmail] += 1
+        redisClient.hSet("users",req.loginEmail,JSON.stringify(userObject));
+        res.status(401);//unauthorized
+        res.send(['Invalid user or password', loginAttempts]);
     }
-
 });
